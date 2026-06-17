@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { supabase, hasSupabase } from "./supabase";
 import {
   Plus, Pencil, Trash2, X, Search, Gauge, Layers, Users, AlertTriangle,
   Calendar, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Settings, Maximize2, RotateCcw,
@@ -503,9 +504,84 @@ const seed = () => {
 
 /* ============================ Persistence ============================ */
 const KEY = "qs-epcc-dashboard-v7";
+const STORE_PREFIX = "qs-epcc-dashboard-";
+
+// Mengonversi data dari skema versi lama ke skema terbaru (tim per-peran, jabatan baru, status hasil, RKAP).
+function migrateData(d) {
+  if (!d || typeof d !== "object") return null;
+  const personnel = (d.personnel || []).map((p) => {
+    let struktural = p.struktural === "Koordinator" ? "Coordinator" : p.struktural;
+    let jobdesk = (p.jobdesk || []).slice();
+    if (jobdesk.includes("Expert") && (!struktural || struktural === "Staf")) struktural = "Expert";
+    jobdesk = jobdesk.filter((j) => j !== "Expert" && j !== "Coordinator");
+    if (!["Manager", "Expert", "Coordinator", "Staf"].includes(struktural)) struktural = "Staf";
+    return { id: p.id || uid(), nip: p.nip || "", nama: p.nama || "", alias: p.alias || "", struktural, fungsional: p.fungsional || "", jobdesk, disiplin: p.disiplin || [], atasanId: p.atasanId || "", relasi: p.relasi || "lini" };
+  });
+  const roleOf = (pid) => {
+    const pr = personnel.find((x) => x.id === pid);
+    if (!pr) return "Others";
+    if (pr.struktural === "Expert") return "Expert";
+    const jd = pr.jobdesk || [];
+    if (jd.includes("Estimator")) return "Estimator";
+    if (jd.includes("Compiler")) return "Compiler";
+    if (jd.includes("SCM")) return "SCM";
+    if (jd.includes("Construction")) return "Construction";
+    return "Others";
+  };
+  const emptyTim = () => ({ Expert: [], Compiler: [], Estimator: [], SCM: [], Construction: [], Others: [] });
+  const tenders = (d.tenders || []).map((t) => {
+    const tim = emptyTim();
+    if (t.tim && typeof t.tim === "object") {
+      Object.keys(emptyTim()).forEach((r) => { if (Array.isArray(t.tim[r])) tim[r] = t.tim[r].slice(); });
+      // peran lama yang tak dikenal dipindah ke Others
+      Object.keys(t.tim).forEach((r) => { if (!tim[r] && Array.isArray(t.tim[r])) t.tim[r].forEach((id) => { if (!tim.Others.includes(id)) tim.Others.push(id); }); });
+    } else if (Array.isArray(t.personil)) {
+      t.personil.forEach((pid) => { const r = roleOf(pid); if (!tim[r].includes(pid)) tim[r].push(pid); });
+    }
+    return { ...t, hasil: t.hasil || "proses", prioritas: t.prioritas || "normal", tim, updates: t.updates || [] };
+  });
+  const rkap = (d.rkap || []).map((r) => ({ ...r, praku: r.praku || "Belum", nr1: r.nr1 || "Belum", ket: r.ket || "" }));
+  return { tenders, personnel, rkap };
+}
+
 // Penyimpanan lokal di browser (per-perangkat). Untuk data terpusat antar-pengguna, ganti ke Supabase.
-function loadStore() { try { const r = localStorage.getItem(KEY); return r ? JSON.parse(r) : null; } catch { return null; } }
+function loadStore() {
+  try {
+    const cur = localStorage.getItem(KEY);
+    if (cur) return JSON.parse(cur);
+    // Migrasi otomatis dari versi lama: data localStorage tetap ada selama domain sama.
+    let best = null, bestV = -1;
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k !== KEY && k.startsWith(STORE_PREFIX)) { const m = k.match(/-v(\d+)$/); const v = m ? +m[1] : 0; if (v >= bestV) { bestV = v; best = k; } }
+    }
+    if (best) { const mig = migrateData(JSON.parse(localStorage.getItem(best))); if (mig) { localStorage.setItem(KEY, JSON.stringify(mig)); return mig; } }
+    return null;
+  } catch { return null; }
+}
 function saveStore(d) { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch {} }
+
+// Lapisan data terpusat: pakai Supabase bila terkonfigurasi, jika tidak fallback ke localStorage.
+async function dataLoad() {
+  if (hasSupabase) {
+    try {
+      const { data, error } = await supabase.from("dashboard").select("data").eq("id", "main").maybeSingle();
+      if (error) throw error;
+      return data ? data.data : null;
+    } catch (e) { console.error("Supabase load gagal:", e.message || e); return null; }
+  }
+  return loadStore();
+}
+async function dataSave(d) {
+  if (hasSupabase) {
+    try {
+      const { error } = await supabase.from("dashboard").upsert({ id: "main", data: d, updated_at: new Date().toISOString() });
+      if (error) throw error;
+    } catch (e) { console.error("Supabase simpan gagal:", e.message || e); }
+    return;
+  }
+  saveStore(d);
+}
 
 /* ============================ App ============================ */
 /* ============================ Autentikasi ============================ */
@@ -517,14 +593,24 @@ const USERS = [
   { u: "viewer", p: "lihat2024", role: "viewer", nama: "Pengunjung" },
 ];
 
-function LoginScreen({ onLogin }) {
+function LoginScreen({ onLocalLogin, cloud }) {
   const [u, setU] = useState("");
   const [p, setP] = useState("");
   const [err, setErr] = useState("");
-  const submit = () => {
-    const found = USERS.find((x) => x.u === u.trim().toLowerCase() && x.p === p);
-    if (!found) { setErr("Username atau password salah."); return; }
-    onLogin({ u: found.u, role: found.role, nama: found.nama });
+  const [busy, setBusy] = useState(false);
+  const submit = async () => {
+    setErr("");
+    if (cloud) {
+      setBusy(true);
+      const { error } = await supabase.auth.signInWithPassword({ email: u.trim(), password: p });
+      setBusy(false);
+      if (error) setErr("Email atau password salah, atau akun belum terdaftar.");
+      // Sukses: sesi diproses oleh onAuthStateChange di App.
+    } else {
+      const found = USERS.find((x) => x.u === u.trim().toLowerCase() && x.p === p);
+      if (!found) { setErr("Username atau password salah."); return; }
+      onLocalLogin({ u: found.u, role: found.role, nama: found.nama });
+    }
   };
   return (
     <div className="login-wrap">
@@ -532,11 +618,11 @@ function LoginScreen({ onLogin }) {
       <div className="login-card">
         <div className="login-mark">QS</div>
         <h1>Dashboard Quantity Survey</h1>
-        <p className="login-sub">Divisi EPCC · Akses Terbatas</p>
-        <div className="login-field"><label>Username</label><input className="input" value={u} autoFocus onChange={(e) => { setU(e.target.value); setErr(""); }} onKeyDown={(e) => e.key === "Enter" && submit()} placeholder="username" /></div>
+        <p className="login-sub">Divisi EPCC · Akses Terbatas {cloud ? "· Cloud" : "· Lokal"}</p>
+        <div className="login-field"><label>{cloud ? "Email" : "Username"}</label><input className="input" value={u} autoFocus onChange={(e) => { setU(e.target.value); setErr(""); }} onKeyDown={(e) => e.key === "Enter" && submit()} placeholder={cloud ? "nama@perusahaan.com" : "username"} /></div>
         <div className="login-field"><label>Password</label><input className="input" type="password" value={p} onChange={(e) => { setP(e.target.value); setErr(""); }} onKeyDown={(e) => e.key === "Enter" && submit()} placeholder="••••••••" /></div>
         {err && <div className="login-err"><AlertTriangle size={13} /> {err}</div>}
-        <button className="btn btn-primary login-btn" onClick={submit}><Lock size={15} /> Masuk</button>
+        <button className="btn btn-primary login-btn" disabled={busy} onClick={submit}><Lock size={15} /> {busy ? "Memproses…" : "Masuk"}</button>
         <div className="login-note">Hubungi admin divisi untuk memperoleh akun. Editor dapat mengubah data; pengunjung hanya dapat melihat.</div>
       </div>
     </div>
@@ -544,9 +630,48 @@ function LoginScreen({ onLogin }) {
 }
 
 export default function App() {
-  const [auth, setAuth] = useState(() => { try { const r = localStorage.getItem(AUTH_KEY); return r ? JSON.parse(r) : null; } catch { return null; } });
-  const login = (a) => { try { localStorage.setItem(AUTH_KEY, JSON.stringify(a)); } catch {} setAuth(a); };
-  const logout = () => { try { localStorage.removeItem(AUTH_KEY); } catch {} setAuth(null); };
+  const [auth, setAuth] = useState(null);
+  const [authReady, setAuthReady] = useState(!hasSupabase);
+  const lastJsonRef = useRef("");
+
+  // Mode lokal (tanpa Supabase): sesi disimpan di localStorage.
+  useEffect(() => {
+    if (hasSupabase) return;
+    try { const r = localStorage.getItem(AUTH_KEY); if (r) setAuth(JSON.parse(r)); } catch {}
+    setAuthReady(true);
+  }, []);
+  const loginLocal = (a) => { try { localStorage.setItem(AUTH_KEY, JSON.stringify(a)); } catch {} setAuth(a); };
+
+  // Mode cloud: pakai Supabase Auth + ambil peran dari tabel profiles.
+  useEffect(() => {
+    if (!hasSupabase) return;
+    let subscription;
+    const applySession = async (session) => {
+      if (!session || !session.user) { setAuth(null); return; }
+      const usr = session.user;
+      let role = "viewer", nama = usr.email;
+      try {
+        const { data: prof } = await supabase.from("profiles").select("role, nama").eq("id", usr.id).maybeSingle();
+        if (prof) { role = prof.role || "viewer"; nama = prof.nama || usr.email; }
+      } catch {}
+      setAuth({ role, nama, email: usr.email });
+    };
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      await applySession(data.session);
+      setAuthReady(true);
+      const res = supabase.auth.onAuthStateChange((_e, session) => { applySession(session); });
+      subscription = res.data.subscription;
+    })();
+    return () => { try { subscription && subscription.unsubscribe(); } catch {} };
+  }, []);
+
+  const logout = async () => {
+    if (hasSupabase) { try { await supabase.auth.signOut(); } catch {} }
+    else { try { localStorage.removeItem(AUTH_KEY); } catch {} }
+    setAuth(null);
+  };
+
   const canEdit = auth && auth.role === "editor";
   const [tab, setTab] = useState("ringkasan");
   const [tenders, setTenders] = useState([]);
@@ -559,13 +684,44 @@ export default function App() {
   const [rkapModal, setRkapModal] = useState(null);
   const [infoModal, setInfoModal] = useState(null);
 
-  useEffect(() => { (async () => {
-    const s = await loadStore();
-    if (s && s.tenders) { setTenders(s.tenders); setPersonnel(s.personnel || []); setRkap(s.rkap || []); }
-    else { const sd = seed(); setTenders(sd.tenders); setPersonnel(sd.personnel); setRkap(sd.rkap); }
-    setLoaded(true);
-  })(); }, []);
-  useEffect(() => { if (loaded) saveStore({ tenders, personnel, rkap }); }, [tenders, personnel, rkap, loaded]);
+  // Muat data setelah login (mode cloud butuh sesi karena dilindungi RLS).
+  useEffect(() => {
+    if (hasSupabase && !auth) return;
+    let cancelled = false;
+    (async () => {
+      const s = await dataLoad();
+      if (cancelled) return;
+      if (s && s.tenders) { setTenders(s.tenders); setPersonnel(s.personnel || []); setRkap(s.rkap || []); }
+      else { const sd = seed(); setTenders(sd.tenders); setPersonnel(sd.personnel); setRkap(sd.rkap); }
+      lastJsonRef.current = JSON.stringify(s && s.tenders ? s : { tenders, personnel, rkap });
+      setLoaded(true);
+    })();
+    return () => { cancelled = true; };
+  }, [hasSupabase ? (auth ? auth.email : null) : "local"]);
+
+  // Simpan (debounce). Pengunjung tidak menulis.
+  useEffect(() => {
+    if (!loaded || !canEdit) return;
+    const json = JSON.stringify({ tenders, personnel, rkap });
+    if (json === lastJsonRef.current) return;
+    const h = setTimeout(() => { lastJsonRef.current = json; dataSave({ tenders, personnel, rkap }); }, 500);
+    return () => clearTimeout(h);
+  }, [tenders, personnel, rkap, loaded, canEdit]);
+
+  // Sinkronisasi real-time antar pengguna (mode cloud).
+  useEffect(() => {
+    if (!hasSupabase || !auth) return;
+    const ch = supabase.channel("dashboard-main")
+      .on("postgres_changes", { event: "*", schema: "public", table: "dashboard", filter: "id=eq.main" }, (payload) => {
+        const d = payload.new && payload.new.data;
+        if (!d) return;
+        const json = JSON.stringify(d);
+        if (json === lastJsonRef.current) return; // perubahan dari diri sendiri, abaikan
+        lastJsonRef.current = json;
+        setTenders(d.tenders || []); setPersonnel(d.personnel || []); setRkap(d.rkap || []);
+      }).subscribe();
+    return () => { try { supabase.removeChannel(ch); } catch {} };
+  }, [auth]);
 
   const pById = useMemo(() => Object.fromEntries(personnel.map((p) => [p.id, p])), [personnel]);
   const sasaran = tenders.filter((t) => t.grup === "sasaran");
@@ -618,7 +774,8 @@ export default function App() {
   const q = search.trim().toLowerCase();
   const match = (t) => !q || t.nama.toLowerCase().includes(q) || (t.client || "").toLowerCase().includes(q) || (t.ket || "").toLowerCase().includes(q) || (t.partner || "").toLowerCase().includes(q);
 
-  if (!auth) return <LoginScreen onLogin={login} />;
+  if (!authReady) return <div className="login-wrap"><style>{CSS}</style><div className="login-card"><div className="login-mark">QS</div><p className="login-sub" style={{ marginTop: 14 }}>Memuat sesi…</p></div></div>;
+  if (!auth) return <LoginScreen cloud={hasSupabase} onLocalLogin={loginLocal} />;
 
   return (
     <div className="tm">

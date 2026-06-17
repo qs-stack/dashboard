@@ -1,7 +1,11 @@
 # Dashboard Quantity Survey — Divisi EPCC
 
 Web app monitoring tender (RKAP, List Tender, Personel, Kalender) berbasis React + Vite.
-Data tersimpan di `localStorage` (per-browser/per-perangkat). Tidak butuh backend untuk jalan.
+
+Aplikasi punya **dua mode penyimpanan otomatis**:
+- **Mode lokal (default):** data di `localStorage` (per-browser/per-perangkat), login username sederhana. Tidak butuh backend.
+- **Mode cloud (disarankan):** data terpusat di **Supabase** (sama di semua perangkat, tahan redeploy) + login email/password yang aman. Aktif otomatis begitu environment variable Supabase diisi. Panduan lengkap: lihat **SUPABASE_SETUP.md**.
+
 
 ---
 
