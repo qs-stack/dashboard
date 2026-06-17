@@ -3,7 +3,7 @@ import {
   Plus, Pencil, Trash2, X, Search, Gauge, Layers, Users, AlertTriangle,
   Calendar, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Settings, Maximize2, RotateCcw,
   ChevronsUp, ChevronsDown, MessageSquare, Megaphone, Network,
-  Target, Briefcase, Clock, FileText
+  Target, Briefcase, Clock, FileText, Lock, LogOut, Eye, Shield, Building2
 } from "lucide-react";
 
 /* ============================ Design tokens ============================ */
@@ -12,9 +12,11 @@ const CAT = { Manager: "#b45309", Expert: "#7c3aed", Coordinator: "#1d4ed8", Sta
 const DISC = { CIVIL: "#92400e", MECHANICAL: "#1e40af", PIPING: "#047857", ELECTRICAL: "#b45309", INSTRUMENT: "#6d28d9" };
 const JC_COLOR = { Pemerintah: "#1d4ed8", BUMN: "#0d9488", Swasta: "#b45309", Lainnya: "#6b7280" };
 const JOBDESK_COLOR = { Estimator: "#1d4ed8", Compiler: "#7c3aed", SCM: "#0d9488", Risk: "#c2143b", Scheduler: "#b45309", Construction: "#475569" };
-const ROLE_CATS = ["Expert", "Compiler", "Estimator", "SCM"];
-const ROLE_COLOR = { Expert: "#7c3aed", Compiler: "#b45309", Estimator: "#1d4ed8", SCM: "#0d9488" };
+const ROLE_CATS = ["Expert", "Compiler", "Estimator", "SCM", "Construction", "Others"];
+const ROLE_COLOR = { Expert: "#7c3aed", Compiler: "#b45309", Estimator: "#1d4ed8", SCM: "#0d9488", Construction: "#475569", Others: "#6b7280" };
 const HASIL = { proses: { label: "Proses", color: "#2563eb" }, menang: { label: "Menang", color: "#16a34a" }, kalah: { label: "Kalah", color: "#c2143b" }, pasif: { label: "Pasif", color: "#6b7280" } };
+const PRAKU = { "Lolos": "#16a34a", "Tidak Lolos": "#c2143b", "Proses": "#2563eb", "Belum": "#6b7280" };
+const PRAKU_OPT = ["Lolos", "Tidak Lolos", "Proses", "Belum"];
 const PRIO_RANK = { high: 0, normal: 1, low: 2 };
 
 const JENIS_CLIENT = ["Pemerintah", "BUMN", "Swasta", "Lainnya"];
@@ -66,6 +68,21 @@ const CSS = `
 .tab.active .cnt{background:#fff;color:var(--ink)}
 
 .wrap{max-width:1280px;margin:0 auto;padding:20px 22px}
+.login-wrap{min-height:100vh;display:grid;place-items:center;background:linear-gradient(135deg,#eef2f9,#e4ecf7);padding:20px;font-family:-apple-system,"Segoe UI",Roboto,system-ui,sans-serif;color:var(--ink)}
+.login-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:30px 28px;width:100%;max-width:360px;box-shadow:0 18px 50px rgba(20,30,50,.12);text-align:center}
+.login-mark{width:52px;height:52px;border-radius:14px;background:#1d4ed8;color:#fff;font-weight:800;font-size:19px;display:grid;place-items:center;margin:0 auto 14px;font-family:'Sora',sans-serif}
+.login-card h1{font-size:17px;font-weight:700;color:var(--ink);margin:0}
+.login-sub{font-size:12px;color:var(--muted);margin:4px 0 20px}
+.login-field{text-align:left;margin-bottom:12px}
+.login-field label{font-size:11px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px}
+.login-err{display:flex;align-items:center;gap:6px;justify-content:center;font-size:12px;color:#c2143b;background:#fdecef;border:1px solid #f6c9d2;border-radius:8px;padding:7px;margin-bottom:12px}
+.login-btn{width:100%;justify-content:center;margin-top:4px}
+.login-note{font-size:11px;color:var(--muted-2);margin-top:16px;line-height:1.5}
+.acct{margin-left:auto;display:flex;align-items:center;gap:10px}
+.acct-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px}
+.acct-badge.ed{color:#157a4a;background:#e3f4ea}.acct-badge.vw{color:#475569;background:#eef1f5}
+.acct-name{font-size:12.5px;color:var(--ink-2);font-weight:600}
+@media(max-width:600px){.acct-name{display:none}}
 
 /* light panel */
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
@@ -90,6 +107,13 @@ table.t{width:100%;border-collapse:collapse;min-width:1180px}
 .t tr:last-child td{border-bottom:0}.t tr:hover td{background:var(--surface-2)}
 .t .nama{font-weight:600;max-width:240px}
 .t .ket{color:var(--muted);font-size:12px;max-width:180px}
+.fullbleed{width:100vw;position:relative;left:50%;right:50%;margin-left:-50vw;margin-right:-50vw;padding:0 22px;box-sizing:border-box}
+table.t--wide{min-width:1280px}
+.t--wide td,.t--wide th{white-space:nowrap}
+.t--wide .nama{max-width:none;white-space:normal;min-width:180px}
+.t--wide .cl{white-space:normal;min-width:150px;font-size:12.5px;color:var(--ink-2)}
+.t--wide .ket{max-width:240px;white-space:normal}
+.prio-chip{font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;display:inline-block}
 .grp-bar{display:flex;align-items:center;gap:9px;padding:10px 14px;background:var(--surface-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .grp-bar .ic{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;background:var(--ink);color:#fff}
 .grp-bar h3{font-size:12.5px;font-weight:700;margin:0;text-transform:uppercase;letter-spacing:.05em}
@@ -204,7 +228,11 @@ table.t{width:100%;border-collapse:collapse;min-width:1180px}
 .ptags{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
 .ptag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;color:#fff;border:0}
 .ptag.disc{color:#fff;border:0}
-.pwl{font-size:11px;color:var(--muted);white-space:nowrap;text-align:right}.pwl b{color:var(--ink)}
+.pwl{width:150px;flex:0 0 auto;text-align:right}
+.pwl-top{font-size:11px;color:var(--muted);white-space:nowrap}.pwl-n{font-size:16px;font-weight:800;margin-right:4px}
+.pwl-bar{height:6px;border-radius:4px;background:#eef1f5;overflow:hidden;margin:5px 0 3px}.pwl-bar i{display:block;height:100%}
+.pwl-lb{font-size:10px;color:var(--muted-2)}
+@media(max-width:600px){.pwl{width:110px}}
 
 .empty{text-align:center;padding:38px 20px;color:var(--muted)}
 /* org chart */
@@ -389,9 +417,17 @@ const remainingDays = (s) => {
 };
 const urgency = (rd) => {
   if (rd === null) return { lvl: "none", label: "Belum dijadwal" };
-  if (rd < 0) return { lvl: "crit", label: `Lewat ${Math.abs(rd)}h` };
+  if (rd < 0) return { lvl: "ok", label: "Tersubmit" };
   if (rd === 0) return { lvl: "crit", label: "Hari ini" };
   if (rd <= 3) return { lvl: "crit", label: `${rd} hari` };
+  if (rd <= 7) return { lvl: "soon", label: `${rd} hari` };
+  if (rd <= 14) return { lvl: "warn", label: `${rd} hari` };
+  return { lvl: "ok", label: `${rd} hari` };
+};
+const nr2Status = (rd) => {
+  if (rd === null) return { lvl: "none", label: "—" };
+  if (rd < 0) return { lvl: "ok", label: "Sudah" };
+  if (rd === 0) return { lvl: "crit", label: "Hari ini" };
   if (rd <= 7) return { lvl: "soon", label: `${rd} hari` };
   if (rd <= 14) return { lvl: "warn", label: `${rd} hari` };
   return { lvl: "ok", label: `${rd} hari` };
@@ -450,12 +486,12 @@ const seed = () => {
   ];
   const rkap = [
     { id: uid(), nama: "Infrastruktur Jalan & Jembatan", client: "Kementerian PUPR", jenisClient: "Pemerintah", bulan: mForward(1), nilai: 250000000000, praku: "Lolos", nr1: "ACC", ket: "Fokus proyek konektivitas" },
-    { id: uid(), nama: "EPC Fasilitas Migas", client: "PT Pertamina (Persero)", jenisClient: "BUMN", bulan: mForward(2), nilai: 180000000000, praku: "Belum", nr1: "Belum", ket: "Segmen energi, menunggu pengumuman" },
+    { id: uid(), nama: "EPC Fasilitas Migas", client: "PT Pertamina (Persero)", jenisClient: "BUMN", bulan: mForward(2), nilai: 180000000000, praku: "Proses", nr1: "Belum", ket: "Segmen energi, menunggu pengumuman" },
     { id: uid(), nama: "Bangunan Gedung Negara", client: "Pemprov Jawa Barat", jenisClient: "Pemerintah", bulan: mForward(3), nilai: 120000000000, praku: "Lolos", nr1: "Belum", ket: "Proyek pemerintah, dokumen disiapkan" },
     { id: uid(), nama: "Kelistrikan & Instrumentasi", client: "PT PLN (Persero)", jenisClient: "BUMN", bulan: mForward(1), nilai: 90000000000, praku: "Belum", nr1: "ACC", ket: "Segmen ketenagalistrikan" },
   ];
   const tenders = [
-    { id: uid(), grup: "sasaran", nama: "Pembangunan Gedung Kantor Gubernur", client: "Pemprov Jawa Barat", jenisClient: "Pemerintah", nilai: 125000000000, status: "KSO", partner: "PT Wijaya Karya", tgl: dForward(7), nr1: "Sudah", nr2tgl: dForward(14), format: "2 Sampul", prioritas: "high", hasil: "proses", ket: "Menunggu addendum dokumen", tim: { Expert: ["p2"], Compiler: ["p3"], Estimator: ["p8"], SCM: ["p6"] }, updates: [{ tgl: dForward(-2), teks: "Rapat koordinasi: dokumen addendum sudah diterima, tim mulai hitung volume struktur." }, { tgl: dForward(-7), teks: "Konfirmasi keikutsertaan KSO dengan PT Wijaya Karya." }] },
+    { id: uid(), grup: "sasaran", nama: "Pembangunan Gedung Kantor Gubernur", client: "Pemprov Jawa Barat", jenisClient: "Pemerintah", nilai: 125000000000, status: "KSO", partner: "PT Wijaya Karya", tgl: dForward(7), nr1: "Sudah", nr2tgl: dForward(14), format: "2 Sampul", prioritas: "high", hasil: "proses", ket: "Menunggu addendum dokumen", tim: { Expert: ["p2"], Compiler: ["p3"], Estimator: ["p4"], SCM: ["p6"], Construction: ["p8"] }, updates: [{ tgl: dForward(-2), teks: "Rapat koordinasi: dokumen addendum sudah diterima, tim mulai hitung volume struktur." }, { tgl: dForward(-7), teks: "Konfirmasi keikutsertaan KSO dengan PT Wijaya Karya." }] },
     { id: uid(), grup: "sasaran", nama: "Revitalisasi Jaringan Irigasi DI Cibaliung", client: "Kementerian PUPR", jenisClient: "Pemerintah", nilai: 78500000000, status: "JO", partner: "PT Adhi Karya", tgl: dForward(3), nr1: "Belum", nr2tgl: dForward(6), format: "2 Sampul", prioritas: "high", hasil: "proses", ket: "Finalisasi metode pelaksanaan", tim: { Expert: ["p2"], Compiler: ["p3"], Estimator: ["p4"], SCM: ["p6"] }, updates: [{ tgl: dForward(-1), teks: "Metode pelaksanaan difinalisasi, menunggu review koordinator." }] },
     { id: uid(), grup: "sasaran", nama: "EPC Fasilitas Pengolahan Gas", client: "PT Pertamina Gas", jenisClient: "BUMN", nilai: 210000000000, status: "Mandiri", partner: "", tgl: dForward(20), nr1: "Belum", nr2tgl: dForward(25), format: "1 Sampul", prioritas: "normal", hasil: "menang", ket: "Dinyatakan menang, masuk realisasi", tim: { Expert: ["p2"], Compiler: ["p3"], Estimator: ["p4", "p5"], SCM: ["p6"] }, updates: [{ tgl: dForward(-3), teks: "Pengumuman pemenang: tim kita ditetapkan sebagai pemenang." }] },
     { id: uid(), grup: "sasaran", nama: "EPCC Gardu Induk 150kV", client: "PT PLN (Persero)", jenisClient: "BUMN", nilai: 95000000000, status: "JO", partner: "PT PP", tgl: dForward(2), nr1: "Sudah", nr2tgl: dForward(10), format: "2 Sampul", prioritas: "high", hasil: "proses", ket: "Prakualifikasi lolos", tim: { Expert: ["p2"], Compiler: ["p3"], Estimator: ["p5"], SCM: [] }, updates: [{ tgl: dForward(-1), teks: "Lolos prakualifikasi, segera siapkan dokumen penawaran." }] },
@@ -466,13 +502,52 @@ const seed = () => {
 };
 
 /* ============================ Persistence ============================ */
-const KEY = "qs-epcc-dashboard-v6";
+const KEY = "qs-epcc-dashboard-v7";
 // Penyimpanan lokal di browser (per-perangkat). Untuk data terpusat antar-pengguna, ganti ke Supabase.
 function loadStore() { try { const r = localStorage.getItem(KEY); return r ? JSON.parse(r) : null; } catch { return null; } }
 function saveStore(d) { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch {} }
 
 /* ============================ App ============================ */
+/* ============================ Autentikasi ============================ */
+// Catatan: ini proteksi sisi-klien (semi-rahasia). Untuk keamanan penuh, pindahkan verifikasi ke server/Supabase.
+const AUTH_KEY = "qs-epcc-auth";
+const USERS = [
+  { u: "admin", p: "epcc2024", role: "editor", nama: "Administrator" },
+  { u: "editor", p: "qsepcc25", role: "editor", nama: "Editor Divisi" },
+  { u: "viewer", p: "lihat2024", role: "viewer", nama: "Pengunjung" },
+];
+
+function LoginScreen({ onLogin }) {
+  const [u, setU] = useState("");
+  const [p, setP] = useState("");
+  const [err, setErr] = useState("");
+  const submit = () => {
+    const found = USERS.find((x) => x.u === u.trim().toLowerCase() && x.p === p);
+    if (!found) { setErr("Username atau password salah."); return; }
+    onLogin({ u: found.u, role: found.role, nama: found.nama });
+  };
+  return (
+    <div className="login-wrap">
+      <style>{CSS}</style>
+      <div className="login-card">
+        <div className="login-mark">QS</div>
+        <h1>Dashboard Quantity Survey</h1>
+        <p className="login-sub">Divisi EPCC · Akses Terbatas</p>
+        <div className="login-field"><label>Username</label><input className="input" value={u} autoFocus onChange={(e) => { setU(e.target.value); setErr(""); }} onKeyDown={(e) => e.key === "Enter" && submit()} placeholder="username" /></div>
+        <div className="login-field"><label>Password</label><input className="input" type="password" value={p} onChange={(e) => { setP(e.target.value); setErr(""); }} onKeyDown={(e) => e.key === "Enter" && submit()} placeholder="••••••••" /></div>
+        {err && <div className="login-err"><AlertTriangle size={13} /> {err}</div>}
+        <button className="btn btn-primary login-btn" onClick={submit}><Lock size={15} /> Masuk</button>
+        <div className="login-note">Hubungi admin divisi untuk memperoleh akun. Editor dapat mengubah data; pengunjung hanya dapat melihat.</div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
+  const [auth, setAuth] = useState(() => { try { const r = localStorage.getItem(AUTH_KEY); return r ? JSON.parse(r) : null; } catch { return null; } });
+  const login = (a) => { try { localStorage.setItem(AUTH_KEY, JSON.stringify(a)); } catch {} setAuth(a); };
+  const logout = () => { try { localStorage.removeItem(AUTH_KEY); } catch {} setAuth(null); };
+  const canEdit = auth && auth.role === "editor";
   const [tab, setTab] = useState("ringkasan");
   const [tenders, setTenders] = useState([]);
   const [personnel, setPersonnel] = useState([]);
@@ -509,7 +584,7 @@ export default function App() {
   const workload = useMemo(() => {
     const CAP = 6;
     return personnel.map((p) => {
-      const mine = tenders.filter((t) => isActive(t) && timIds(t).includes(p.id));
+      const mine = tenders.filter((t) => (t.hasil || "proses") === "proses" && timIds(t).includes(p.id));
       const score = mine.reduce((s, t) => s + loadWeight(t), 0);
       const pct = Math.min(100, Math.round((score / CAP) * 100));
       const lvl = pct >= 85 ? "crit" : pct >= 55 ? "warn" : "ok";
@@ -517,11 +592,11 @@ export default function App() {
     }).sort((a, b) => b.score - a.score);
   }, [personnel, tenders]);
 
-  // beban kerja dikelompokkan per kategori peran (Expert/Compiler/Estimator/SCM)
+  // beban kerja dikelompokkan per kategori peran — hanya tender yang masih proses
   const roleWorkload = useMemo(() => {
     return ROLE_CATS.map((role) => {
       const map = {};
-      tenders.filter(isActive).forEach((t) => ((t.tim && t.tim[role]) || []).forEach((id) => { map[id] = (map[id] || 0) + 1; }));
+      tenders.filter((t) => (t.hasil || "proses") === "proses").forEach((t) => ((t.tim && t.tim[role]) || []).forEach((id) => { map[id] = (map[id] || 0) + 1; }));
       const people = Object.entries(map).map(([id, count]) => ({ p: pById[id], count })).filter((x) => x.p).sort((a, b) => b.count - a.count);
       const max = Math.max(...people.map((x) => x.count), 1);
       return { role, people, max };
@@ -543,6 +618,8 @@ export default function App() {
   const q = search.trim().toLowerCase();
   const match = (t) => !q || t.nama.toLowerCase().includes(q) || (t.client || "").toLowerCase().includes(q) || (t.ket || "").toLowerCase().includes(q) || (t.partner || "").toLowerCase().includes(q);
 
+  if (!auth) return <LoginScreen onLogin={login} />;
+
   return (
     <div className="tm">
       <style>{CSS}</style>
@@ -554,6 +631,11 @@ export default function App() {
             <h1>Dashboard Quantity Survey</h1>
             <p>Divisi EPCC</p>
           </div>
+        </div>
+        <div className="acct">
+          <span className={"acct-badge " + (canEdit ? "ed" : "vw")}>{canEdit ? <Shield size={12} /> : <Eye size={12} />} {canEdit ? "Editor" : "Pengunjung"}</span>
+          <span className="acct-name">{auth.nama}</span>
+          <button className="btn btn-sm" onClick={logout} title="Keluar"><LogOut size={14} /> Keluar</button>
         </div>
       </div>
 
@@ -584,7 +666,7 @@ export default function App() {
         </div>
         <div className={"kbox" + (nr2Next && remainingDays(nr2Next.nr2tgl) <= 3 ? " crit" : "")} style={{ borderLeftColor: "#d9560b", background: tint("#d9560b", 0.05) }}>
           <div className="l" style={{ color: "#d9560b" }}><Clock size={11} /> NR-2 Deadline</div>
-          <div className="v num">{nr2Next ? urgency(remainingDays(nr2Next.nr2tgl)).label : "—"}</div>
+          <div className="v num">{nr2Next ? nr2Status(remainingDays(nr2Next.nr2tgl)).label : "—"}</div>
           <div className="x">{nr2Next ? nr2Next.nama.slice(0, 26) : "tidak ada jadwal"}</div>
         </div>
         <div className="kbox" style={{ borderLeftColor: "#7c3aed", background: tint("#7c3aed", 0.05) }}>
@@ -604,44 +686,43 @@ export default function App() {
         {tab === "ringkasan" && (
           <Ringkasan workload={workload} roleWorkload={roleWorkload} tenders={tenders} sasaran={sasaran} cadangan={cadangan}
             personnel={personnel} rkap={rkap} rkapTarget={rkapTarget} rkapReal={rkapReal} rkapPct={rkapPct}
-            onEdit={(t) => setTenderModal({ tender: t })} onInfo={(t) => setInfoModal(t.id)} />
+            onEdit={canEdit ? (t) => setTenderModal({ tender: t }) : () => {}} onInfo={(t) => setInfoModal(t.id)} />
         )}
 
         {tab === "rkap" && (
-          <RkapTab rkap={rkap} target={rkapTarget} real={rkapReal} pct={rkapPct}
+          <RkapTab rkap={rkap} target={rkapTarget} real={rkapReal} pct={rkapPct} canEdit={canEdit}
             onAdd={() => setRkapModal({ item: null })} onEdit={(r) => setRkapModal({ item: r })} onDel={delRkap} />
         )}
 
         {tab === "tender" && (
-          <>
+          <div className="fullbleed">
             <div className="toolbar">
               <div className="searchbox"><Search size={15} color="var(--muted)" />
                 <input placeholder="Cari tender, client, partner…" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
-              <button className="btn btn-sm" onClick={resetAll}><RotateCcw size={14} /> Reset</button>
-              <button className="btn btn-primary" style={{ marginLeft: "auto" }} onClick={() => setTenderModal({ tender: null })}><Plus size={16} /> Tambah Tender</button>
+              {canEdit && <button className="btn btn-primary" style={{ marginLeft: "auto" }} onClick={() => setTenderModal({ tender: null })}><Plus size={16} /> Tambah Tender</button>}
             </div>
-            <TenderGroup title="Sasaran" icon={<Target size={13} />} rows={sasaran.filter(match)} pById={pById} tone="#16a34a"
+            <TenderGroup title="Sasaran" icon={<Target size={13} />} rows={sasaran.filter(match)} pById={pById} tone="#16a34a" canEdit={canEdit}
               onEdit={(t) => setTenderModal({ tender: t })} onDel={delTender} onInfo={(t) => setInfoModal(t.id)} onHasil={setHasil} />
             <div style={{ height: 18 }} />
-            <TenderGroup title="Cadangan" icon={<Layers size={13} />} rows={cadangan.filter(match)} pById={pById} tone="#ca8a04"
+            <TenderGroup title="Cadangan" icon={<Layers size={13} />} rows={cadangan.filter(match)} pById={pById} tone="#ca8a04" canEdit={canEdit}
               onEdit={(t) => setTenderModal({ tender: t })} onDel={delTender} onInfo={(t) => setInfoModal(t.id)} onHasil={setHasil} />
-          </>
+          </div>
         )}
 
         {tab === "personel" && (
-          <Personel personnel={personnel} workload={workload}
+          <Personel personnel={personnel} workload={workload} canEdit={canEdit}
             onAdd={() => setPersonModal({ person: null })} onEdit={(p) => setPersonModal({ person: p })} onDel={delPerson} />
         )}
 
         {tab === "struktur" && (
-          <StrukturOrg personnel={personnel} onPatch={patchPerson} />
+          <StrukturOrg personnel={personnel} onPatch={patchPerson} canEdit={canEdit} />
         )}
       </div>
 
-      {tenderModal && <TenderModal init={tenderModal.tender} personnel={personnel} onSave={saveTender} onClose={() => setTenderModal(null)} />}
-      {personModal && <PersonModal init={personModal.person} onSave={savePerson} onClose={() => setPersonModal(null)} />}
-      {rkapModal && <RkapModal init={rkapModal.item} onSave={saveRkap} onClose={() => setRkapModal(null)} />}
-      {infoModal && (() => { const t = tenders.find((x) => x.id === infoModal); return t ? <InfoModal tender={t} onAdd={addUpdate} onDel={delUpdate} onClose={() => setInfoModal(null)} /> : null; })()}
+      {canEdit && tenderModal && <TenderModal init={tenderModal.tender} personnel={personnel} onSave={saveTender} onClose={() => setTenderModal(null)} />}
+      {canEdit && personModal && <PersonModal init={personModal.person} onSave={savePerson} onClose={() => setPersonModal(null)} />}
+      {canEdit && rkapModal && <RkapModal init={rkapModal.item} onSave={saveRkap} onClose={() => setRkapModal(null)} />}
+      {infoModal && (() => { const t = tenders.find((x) => x.id === infoModal); return t ? <InfoModal tender={t} canEdit={canEdit} onAdd={addUpdate} onDel={delUpdate} onClose={() => setInfoModal(null)} /> : null; })()}
     </div>
   );
 }
@@ -800,6 +881,8 @@ function Ringkasan({ workload, roleWorkload, tenders, sasaran, cadangan, personn
   const isCounted = (t) => ["proses", "menang"].includes(t.hasil || "proses");
   const counted = tenders.filter(isCounted);
   const totalNilai = counted.reduce((s, t) => s + (+t.nilai || 0), 0);
+  const nilaiMenang = tenders.filter((t) => t.hasil === "menang").reduce((s, t) => s + (+t.nilai || 0), 0);
+  const nilaiProses = tenders.filter((t) => (t.hasil || "proses") === "proses").reduce((s, t) => s + (+t.nilai || 0), 0);
   const nilaiSasaran = sasaran.filter(isCounted).reduce((s, t) => s + (+t.nilai || 0), 0);
   const nilaiCadangan = cadangan.filter(isCounted).reduce((s, t) => s + (+t.nilai || 0), 0);
   const hasilCounts = Object.keys(HASIL).map((k) => ({ k, n: tenders.filter((t) => (t.hasil || "proses") === k).length })).filter((x) => x.n > 0);
@@ -811,7 +894,7 @@ function Ringkasan({ workload, roleWorkload, tenders, sasaran, cadangan, personn
   const maxTop = Math.max(...top.map((t) => +t.nilai || 0), 1);
   const statusList = STATUS.map((k) => ({ k, n: tenders.filter((t) => t.status === k).length })).filter((x) => x.n > 0).sort((a, b) => b.n - a.n);
   const maxStat = Math.max(...statusList.map((s) => s.n), 1);
-  const upcoming = [...tenders].filter((t) => t.tgl).sort((a, b) => remainingDays(a.tgl) - remainingDays(b.tgl)).slice(0, 5);
+  const upcoming = [...tenders].filter((t) => t.tgl && remainingDays(t.tgl) >= 0 && (t.hasil || "proses") === "proses").sort((a, b) => remainingDays(a.tgl) - remainingDays(b.tgl)).slice(0, 5);
   const f1 = tenders.filter((t) => t.format === "1 Sampul").length;
   const f2 = tenders.filter((t) => t.format === "2 Sampul").length;
   const ftot = f1 + f2 || 1;
@@ -833,9 +916,10 @@ function Ringkasan({ workload, roleWorkload, tenders, sasaran, cadangan, personn
     <div className="dash">
       <GCard title="Ringkasan Nilai Tender" span tone="#2563eb">
         <div className="kpis">
-          <div className="kpi-b"><div className="val num">{idrShort(totalNilai)}</div><div className="lb"><span className="dot" style={{ background: C_BLUE }} />Nilai Aktif (proses + menang)</div></div>
-          <div className="kpi-b"><div className="val num">{count} <span className="dl mut">{sasaran.length}S · {cadangan.length}C</span></div><div className="lb"><span className="dot" style={{ background: C_GREEN }} />Jumlah Tender</div></div>
-          <div className="kpi-b"><div className="val num">{urgent}{overdue > 0 && <span className="dl down">▼ {overdue} lewat</span>}</div><div className="lb"><span className="dot" style={{ background: C_RED }} />Pemasukan ≤7 Hari</div></div>
+          <div className="kpi-b"><div className="val num">{idrShort(nilaiMenang)}</div><div className="lb"><span className="dot" style={{ background: "#16a34a" }} />Nilai Menang</div></div>
+          <div className="kpi-b"><div className="val num">{idrShort(nilaiProses)}</div><div className="lb"><span className="dot" style={{ background: C_BLUE }} />Nilai Proses</div></div>
+          <div className="kpi-b"><div className="val num">{count} <span className="dl mut">{sasaran.length}S · {cadangan.length}C</span></div><div className="lb"><span className="dot" style={{ background: C_AMBER }} />Jumlah Tender</div></div>
+          <div className="kpi-b"><div className="val num">{urgent}</div><div className="lb"><span className="dot" style={{ background: C_RED }} />Pemasukan ≤7 Hari</div></div>
         </div>
 
         <div className="tn-grid">
@@ -954,13 +1038,13 @@ function Ringkasan({ workload, roleWorkload, tenders, sasaran, cadangan, personn
 }
 
 /* ============================ RKAP tab ============================ */
-function RkapTab({ rkap, target, real, pct, onAdd, onEdit, onDel }) {
+function RkapTab({ rkap, target, real, pct, onAdd, onEdit, onDel, canEdit }) {
   const sisa = Math.max(0, target - real);
   return (
     <>
       <div className="toolbar">
         <div style={{ fontSize: 13, color: "var(--muted)" }}>Sasaran tender awal (rencana perolehan). Realisasi hanya dari tender yang berstatus <b style={{ color: "#16a34a" }}>Menang</b>.</div>
-        <button className="btn btn-primary" style={{ marginLeft: "auto" }} onClick={onAdd}><Plus size={16} /> Tambah RKAP</button>
+        {canEdit && <button className="btn btn-primary" style={{ marginLeft: "auto" }} onClick={onAdd}><Plus size={16} /> Tambah RKAP</button>}
       </div>
 
       <div className="rkap-summary">
@@ -979,18 +1063,18 @@ function RkapTab({ rkap, target, real, pct, onAdd, onEdit, onDel }) {
         {rkap.length === 0 ? <Empty icon={<Target size={22} />} text="Belum ada item RKAP." /> :
           <div className="t-scroll">
             <table className="t">
-              <thead><tr><th>Nama / Client</th><th>Bulan Rencana</th><th>Nilai Target</th><th>Prakualifikasi</th><th>NR-1</th><th>Keterangan</th><th></th></tr></thead>
-              <tbody>{rkap.map((r) => (
+              <thead><tr><th>Nama / Client</th><th>Bulan Rencana</th><th>Nilai Target</th><th>Prakualifikasi</th><th>NR-1</th><th>Keterangan</th>{canEdit && <th></th>}</tr></thead>
+              <tbody>{rkap.map((r) => { const pk = r.praku || "Belum"; const pc = PRAKU[pk] || "#6b7280"; return (
                 <tr key={r.id}>
                   <td className="nama">{r.nama}<div className="sub-line"><JcBadge jenis={r.jenisClient} /> {r.client || "—"}</div></td>
                   <td className="num" style={{ whiteSpace: "nowrap" }}>{fmtMonth(r.bulan)}</td>
                   <td className="num">{idr(r.nilai)}</td>
-                  <td><span className={"chip chip--" + (r.praku === "Lolos" ? "ok" : "soon")}>{r.praku || "Belum"}</span></td>
+                  <td><span className="prio-chip" style={{ color: pc, background: tint(pc, 0.12) }}>{pk}</span></td>
                   <td><span className={"chip chip--" + (r.nr1 === "ACC" ? "ok" : "soon")}>{r.nr1 || "Belum"}</span></td>
                   <td className="ket">{r.ket || "—"}</td>
-                  <td><div style={{ display: "flex", gap: 2 }}><button className="icon-btn" onClick={() => onEdit(r)}><Pencil size={15} /></button><button className="icon-btn danger" onClick={() => onDel(r.id)}><Trash2 size={15} /></button></div></td>
+                  {canEdit && <td><div style={{ display: "flex", gap: 2 }}><button className="icon-btn" onClick={() => onEdit(r)}><Pencil size={15} /></button><button className="icon-btn danger" onClick={() => onDel(r.id)}><Trash2 size={15} /></button></div></td>}
                 </tr>
-              ))}</tbody>
+              ); })}</tbody>
             </table>
           </div>}
       </div>
@@ -999,7 +1083,10 @@ function RkapTab({ rkap, target, real, pct, onAdd, onEdit, onDel }) {
 }
 
 /* ============================ Tender group/table ============================ */
-function TenderGroup({ title, icon, rows, pById, tone, onEdit, onDel, onInfo, onHasil }) {
+const PRIO_LABEL = { high: "Tinggi", normal: "Normal", low: "Rendah" };
+const PRIO_COLOR = { high: "#c2143b", normal: "#64748b", low: "#0d9488" };
+
+function TenderGroup({ title, icon, rows, pById, tone, onEdit, onDel, onInfo, onHasil, canEdit }) {
   const total = rows.reduce((s, t) => s + (+t.nilai || 0), 0);
   const sorted = [...rows].sort((a, b) => {
     const pr = (PRIO_RANK[a.prioritas] ?? 1) - (PRIO_RANK[b.prioritas] ?? 1);
@@ -1015,14 +1102,14 @@ function TenderGroup({ title, icon, rows, pById, tone, onEdit, onDel, onInfo, on
         <span className="meta" style={{ color: "rgba(255,255,255,.9)" }}><b className="num">{rows.length}</b> tender · <span className="num">{idrShort(total)}</span></span></div>
       {rows.length === 0 ? <Empty icon={<FileText size={22} />} text={`Belum ada tender pada grup ${title.toLowerCase()}.`} /> :
         <div className="t-scroll">
-          <table className="t">
+          <table className="t t--wide">
             <thead><tr>
-              <th>Nama / Client</th><th>Nilai</th><th>Hasil</th><th>Status</th><th>Pemasukan</th><th>Sisa</th>
-              <th>NR-1</th><th>NR-2</th><th>Format</th><th>Tim</th><th>Update Terakhir</th><th></th>
+              <th>Nama Project</th><th>Client</th><th>Nilai</th><th>Prioritas</th><th>Hasil</th><th>Status</th>
+              <th>Pemasukan</th><th>NR-1</th><th>NR-2</th><th>Format</th><th>Tim</th><th>Keterangan</th>{canEdit && <th></th>}
             </tr></thead>
             <tbody>{sorted.map((t) => {
               const u = urgency(remainingDays(t.tgl));
-              const u2 = urgency(remainingDays(t.nr2tgl));
+              const n2 = nr2Status(remainingDays(t.nr2tgl));
               const tim = t.tim || {};
               const members = ROLE_CATS.flatMap((r) => (tim[r] || []).map((id) => ({ role: r, p: pById[id] }))).filter((x) => x.p);
               const hasil = t.hasil || "proses";
@@ -1030,24 +1117,27 @@ function TenderGroup({ title, icon, rows, pById, tone, onEdit, onDel, onInfo, on
               const latest = ups[0];
               return (
                 <tr key={t.id}>
-                  <td className="nama"><div className="nm-line"><PrioBadge p={t.prioritas} />{t.nama}</div><div className="sub-line"><JcBadge jenis={t.jenisClient} /> {t.client}</div></td>
+                  <td className="nama">{t.nama}</td>
+                  <td className="cl"><JcBadge jenis={t.jenisClient} /> {t.client || "—"}</td>
                   <td className="num">{idrShort(t.nilai)}</td>
-                  <td><select className="hasil-sel" value={hasil} onChange={(e) => onHasil(t.id, e.target.value)} style={{ color: HASIL[hasil].color, borderColor: tint(HASIL[hasil].color, 0.5), background: tint(HASIL[hasil].color, 0.1) }}>
-                    {Object.entries(HASIL).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                  </select></td>
+                  <td><span className="prio-chip" style={{ color: PRIO_COLOR[t.prioritas || "normal"], background: tint(PRIO_COLOR[t.prioritas || "normal"], 0.12) }}>{PRIO_LABEL[t.prioritas || "normal"]}</span></td>
+                  <td>{canEdit ?
+                    <select className="hasil-sel" value={hasil} onChange={(e) => onHasil(t.id, e.target.value)} style={{ color: HASIL[hasil].color, borderColor: tint(HASIL[hasil].color, 0.5), background: tint(HASIL[hasil].color, 0.1) }}>
+                      {Object.entries(HASIL).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                    </select> :
+                    <span className="hasil-sel" style={{ color: HASIL[hasil].color, borderColor: tint(HASIL[hasil].color, 0.5), background: tint(HASIL[hasil].color, 0.1), border: "1px solid" }}>{HASIL[hasil].label}</span>}</td>
                   <td><span className="badge">{t.status}</span>{(t.status === "KSO" || t.status === "JO") && t.partner ? <div className="sub-line">+ {t.partner}</div> : null}</td>
-                  <td className="num" style={{ whiteSpace: "nowrap" }}>{fmtDate(t.tgl)}</td>
-                  <td><span className={"chip chip--" + u.lvl}>{u.label}</span></td>
+                  <td className="num" style={{ whiteSpace: "nowrap" }}>{fmtDate(t.tgl)}<div className="sub-line"><span className={"chip chip--" + u.lvl}>{u.label}</span></div></td>
                   <td><span className={"chip chip--" + (t.nr1 === "Sudah" ? "ok" : "soon")}>{t.nr1 || "Belum"}</span></td>
-                  <td className="num" style={{ whiteSpace: "nowrap" }}>{t.nr2tgl ? <>{fmtDate(t.nr2tgl)}<div className="sub-line"><span className={"chip chip--" + u2.lvl}>{u2.label}</span></div></> : "—"}</td>
+                  <td className="num" style={{ whiteSpace: "nowrap" }}>{t.nr2tgl ? <>{fmtDate(t.nr2tgl)}<div className="sub-line"><span className={"chip chip--" + n2.lvl}>{n2.label}</span></div></> : "—"}</td>
                   <td className="fmt">{t.format}</td>
                   <td>{members.length ? <div className="av-stack" title={members.map((m) => `${m.role}: ${m.p.nama}`).join("\n")}>{members.slice(0, 5).map((m, i) => <div className="av" key={i} style={{ background: ROLE_COLOR[m.role] }}>{initials(m.p.nama)}</div>)}</div> : <span style={{ color: "var(--muted-2)" }}>—</span>}</td>
-                  <td className="ket"><div className="ket-cell" onClick={() => onInfo(t)}>{latest ? latest.teks : (t.ket || "—")}</div><button className="lnk" onClick={() => onInfo(t)}><MessageSquare size={12} /> {ups.length ? `${ups.length} update` : "Tambah update"}</button></td>
-                  <td><div style={{ display: "flex", gap: 2 }}>
+                  <td className="ket"><div className="ket-cell" title={t.ket || ""} onClick={() => onInfo(t)}>{t.ket || (latest ? latest.teks : "—")}</div><button className="lnk" onClick={() => onInfo(t)}><MessageSquare size={12} /> {ups.length ? `${ups.length} update` : "Lihat / update"}</button></td>
+                  {canEdit && <td><div style={{ display: "flex", gap: 2 }}>
                     <button className="icon-btn act-info" onClick={() => onInfo(t)} title="Info & update rapat"><MessageSquare size={15} />{ups.length > 0 && <span className="cnt">{ups.length}</span>}</button>
                     <button className="icon-btn" onClick={() => onEdit(t)} title="Ubah"><Pencil size={15} /></button>
                     <button className="icon-btn danger" onClick={() => onDel(t.id)} title="Hapus"><Trash2 size={15} /></button>
-                  </div></td>
+                  </div></td>}
                 </tr>
               );
             })}</tbody>
@@ -1058,7 +1148,10 @@ function TenderGroup({ title, icon, rows, pById, tone, onEdit, onDel, onInfo, on
 }
 
 /* ============================ Personel ============================ */
-function PersonRow({ p, color, wl, onEdit, onDel }) {
+function PersonRow({ p, color, wl, onEdit, onDel, canEdit }) {
+  const cnt = wl ? wl.count : 0;
+  const pct = wl ? wl.pct : 0;
+  const lvlCol = !wl || wl.lvl === "ok" ? "#16a34a" : wl.lvl === "warn" ? "#d9560b" : "#c2143b";
   return (
     <div className="prow">
       <div className="pav" style={{ background: color }}>{initials(p.nama)}</div>
@@ -1070,35 +1163,39 @@ function PersonRow({ p, color, wl, onEdit, onDel }) {
           {(p.disiplin || []).map((d) => <span className="ptag disc" key={d} style={{ background: DISC[d] }}>{d}</span>)}
         </div>
       </div>
-      <div className="pwl num"><b>{wl ? wl.count : 0}</b> aktif</div>
-      <div style={{ display: "flex", gap: 2 }}><button className="icon-btn" onClick={() => onEdit(p)}><Pencil size={15} /></button><button className="icon-btn danger" onClick={() => onDel(p.id)}><Trash2 size={15} /></button></div>
+      <div className="pwl">
+        <div className="pwl-top"><span className="pwl-n num" style={{ color: lvlCol }}>{cnt}</span> tender proses</div>
+        <div className="pwl-bar"><i style={{ width: Math.max(cnt ? 8 : 0, pct) + "%", background: lvlCol }} /></div>
+        <div className="pwl-lb">{cnt === 0 ? "Tidak ada beban" : wl.lvl === "crit" ? "Beban tinggi" : wl.lvl === "warn" ? "Beban sedang" : "Beban ringan"}</div>
+      </div>
+      {canEdit && <div style={{ display: "flex", gap: 2 }}><button className="icon-btn" onClick={() => onEdit(p)}><Pencil size={15} /></button><button className="icon-btn danger" onClick={() => onDel(p.id)}><Trash2 size={15} /></button></div>}
     </div>
   );
 }
 
-function SimpleSec({ label, color, people, wlMap, onEdit, onDel }) {
+function SimpleSec({ label, color, people, wlMap, onEdit, onDel, canEdit }) {
   return (
     <div className="psec">
       <div className="psec-h" style={{ background: color }}>{label}<span className="pc num">{people.length}</span></div>
       {people.length === 0 ? <div style={{ padding: "14px 15px", color: "var(--muted)", fontSize: 13 }}>Belum ada personel.</div> :
-        people.map((p) => <PersonRow key={p.id} p={p} color={color} wl={wlMap[p.id]} onEdit={onEdit} onDel={onDel} />)}
+        people.map((p) => <PersonRow key={p.id} p={p} color={color} wl={wlMap[p.id]} onEdit={onEdit} onDel={onDel} canEdit={canEdit} />)}
     </div>
   );
 }
 
-function Personel({ personnel, workload, onAdd, onEdit, onDel }) {
+function Personel({ personnel, workload, onAdd, onEdit, onDel, canEdit }) {
   const wlMap = Object.fromEntries(workload.map((w) => [w.id, w]));
   const cat = (key) => personnel.filter((p) => personCategory(p) === key);
 
   return (
     <>
-      <div className="toolbar"><div style={{ fontSize: 13, color: "var(--muted)" }}>Dikelompokkan per jabatan struktural. Jobdesk ditampilkan sebagai kotak berwarna di bawah nama.</div>
-        <button className="btn btn-primary" style={{ marginLeft: "auto" }} onClick={onAdd}><Plus size={16} /> Tambah Personel</button></div>
+      <div className="toolbar"><div style={{ fontSize: 13, color: "var(--muted)" }}>Dikelompokkan per jabatan struktural. Angka di samping nama = jumlah tender proses yang sedang ditangani.</div>
+        {canEdit && <button className="btn btn-primary" style={{ marginLeft: "auto" }} onClick={onAdd}><Plus size={16} /> Tambah Personel</button>}</div>
 
-      <SimpleSec label="Manager" color={CAT.Manager} people={cat("Manager")} wlMap={wlMap} onEdit={onEdit} onDel={onDel} />
-      <SimpleSec label="Expert" color={CAT.Expert} people={cat("Expert")} wlMap={wlMap} onEdit={onEdit} onDel={onDel} />
-      <SimpleSec label="Coordinator" color={CAT.Coordinator} people={cat("Coordinator")} wlMap={wlMap} onEdit={onEdit} onDel={onDel} />
-      <SimpleSec label="Staf" color={CAT.Staf} people={cat("Staf")} wlMap={wlMap} onEdit={onEdit} onDel={onDel} />
+      <SimpleSec label="Manager" color={CAT.Manager} people={cat("Manager")} wlMap={wlMap} onEdit={onEdit} onDel={onDel} canEdit={canEdit} />
+      <SimpleSec label="Expert" color={CAT.Expert} people={cat("Expert")} wlMap={wlMap} onEdit={onEdit} onDel={onDel} canEdit={canEdit} />
+      <SimpleSec label="Coordinator" color={CAT.Coordinator} people={cat("Coordinator")} wlMap={wlMap} onEdit={onEdit} onDel={onDel} canEdit={canEdit} />
+      <SimpleSec label="Staf" color={CAT.Staf} people={cat("Staf")} wlMap={wlMap} onEdit={onEdit} onDel={onDel} canEdit={canEdit} />
     </>
   );
 }
@@ -1117,7 +1214,7 @@ function PrioBadge({ p }) {
 
 /* ============================ Tender modal ============================ */
 function TenderModal({ init, personnel, onSave, onClose }) {
-  const [f, setF] = useState(() => init ? { hasil: "proses", ...init, tim: { Expert: [], Compiler: [], Estimator: [], SCM: [], ...(init.tim || {}) } } : { grup: "sasaran", nama: "", client: "", jenisClient: "Pemerintah", nilai: "", status: "Mandiri", partner: "", tgl: "", nr1: "Belum", nr2tgl: "", format: "1 Sampul", prioritas: "normal", hasil: "proses", ket: "", tim: { Expert: [], Compiler: [], Estimator: [], SCM: [] }, updates: [] });
+  const [f, setF] = useState(() => init ? { hasil: "proses", ...init, tim: { Expert: [], Compiler: [], Estimator: [], SCM: [], Construction: [], Others: [], ...(init.tim || {}) } } : { grup: "sasaran", nama: "", client: "", jenisClient: "Pemerintah", nilai: "", status: "Mandiri", partner: "", tgl: "", nr1: "Belum", nr2tgl: "", format: "1 Sampul", prioritas: "normal", hasil: "proses", ket: "", tim: { Expert: [], Compiler: [], Estimator: [], SCM: [], Construction: [], Others: [] }, updates: [] });
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
   const toggleRole = (role, id) => setF((p) => { const cur = p.tim[role] || []; return { ...p, tim: { ...p.tim, [role]: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id] } }; });
   const submit = () => { if (!f.nama.trim()) { window.alert("Nama tender wajib diisi."); return; } onSave({ ...f, nilai: Number(f.nilai) || 0 }); };
@@ -1227,7 +1324,7 @@ function RkapModal({ init, onSave, onClose }) {
           </div>
           {f.nilai > 0 && <div className="hint num" style={{ marginTop: -6, marginBottom: 12 }}>{idr(f.nilai)}</div>}
           <div className="row2">
-            <div className="field"><label>Status Prakualifikasi</label><div className="seg">{["Lolos", "Belum"].map((s) => <button key={s} className={f.praku === s ? "on" : ""} onClick={() => set("praku", s)}>{s}</button>)}</div></div>
+            <div className="field"><label>Status Prakualifikasi</label><div className="seg seg-wrap">{PRAKU_OPT.map((s) => <button key={s} className={f.praku === s ? "on" : ""} onClick={() => set("praku", s)}>{s}</button>)}</div></div>
             <div className="field"><label>Status NR-1</label><div className="seg">{["ACC", "Belum"].map((s) => <button key={s} className={f.nr1 === s ? "on" : ""} onClick={() => set("nr1", s)}>{s}</button>)}</div></div>
           </div>
           <div className="field"><label>Keterangan <span className="opt">(opsional)</span></label><input className="input" value={f.ket} onChange={(e) => set("ket", e.target.value)} placeholder="cth. Segmen energi" /></div>
@@ -1239,7 +1336,7 @@ function RkapModal({ init, onSave, onClose }) {
 }
 
 /* ============================ Info / Update rapat modal ============================ */
-function InfoModal({ tender, onAdd, onDel, onClose }) {
+function InfoModal({ tender, onAdd, onDel, onClose, canEdit }) {
   const [teks, setTeks] = useState("");
   const [tgl, setTgl] = useState(dkey(TODAY));
   const ups = [...(tender.updates || [])].sort((a, b) => b.tgl.localeCompare(a.tgl));
@@ -1257,22 +1354,24 @@ function InfoModal({ tender, onAdd, onDel, onClose }) {
           <div className="sub-line" style={{ marginBottom: 10 }}><JcBadge jenis={tender.jenisClient} /> {tender.client}</div>
           {tender.ket && <div style={{ fontSize: 12.5, color: "var(--muted)", background: "var(--surface-2)", border: "1px solid var(--line)", borderRadius: 8, padding: "8px 11px", marginBottom: 14 }}>Keterangan umum: {tender.ket}</div>}
 
-          <div className="field" style={{ marginBottom: 8 }}>
-            <label>Tambah Update (mis. hasil rapat koordinasi)</label>
-            <textarea className="textarea" value={teks} onChange={(e) => setTeks(e.target.value)} placeholder="cth. Tim estimasi sipil selesai 60%, menunggu data MEP dari partner…" />
-          </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 16 }}>
-            <input className="input num" type="date" value={tgl} onChange={(e) => setTgl(e.target.value)} style={{ maxWidth: 170 }} />
-            <button className="btn btn-primary btn-sm" onClick={submit}><Plus size={15} /> Tambah</button>
-          </div>
+          {canEdit && <>
+            <div className="field" style={{ marginBottom: 8 }}>
+              <label>Tambah Update (mis. hasil rapat koordinasi)</label>
+              <textarea className="textarea" value={teks} onChange={(e) => setTeks(e.target.value)} placeholder="cth. Tim estimasi sipil selesai 60%, menunggu data MEP dari partner…" />
+            </div>
+            <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 16 }}>
+              <input className="input num" type="date" value={tgl} onChange={(e) => setTgl(e.target.value)} style={{ maxWidth: 170 }} />
+              <button className="btn btn-primary btn-sm" onClick={submit}><Plus size={15} /> Tambah</button>
+            </div>
+          </>}
 
           <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".04em", textTransform: "uppercase", color: "var(--ink-3)" }}>Riwayat Update</label>
-          {ups.length === 0 ? <div style={{ color: "var(--muted)", fontSize: 13, padding: "10px 0" }}>Belum ada update. Tambahkan catatan dari rapat koordinasi mingguan.</div> :
+          {ups.length === 0 ? <div style={{ color: "var(--muted)", fontSize: 13, padding: "10px 0" }}>Belum ada update.</div> :
             <div style={{ marginTop: 6 }}>{ups.map((u, i) => (
               <div className="upd" key={i}>
                 <span className="when num">{fmtDate(u.tgl)}</span>
                 <span className="body">{u.teks}</span>
-                <button className="icon-btn danger" onClick={() => onDel(tender.id, (tender.updates || []).indexOf(u))} title="Hapus"><Trash2 size={13} /></button>
+                {canEdit && <button className="icon-btn danger" onClick={() => onDel(tender.id, (tender.updates || []).indexOf(u))} title="Hapus"><Trash2 size={13} /></button>}
               </div>
             ))}</div>}
         </div>
@@ -1310,7 +1409,7 @@ function OrgNode({ p, all, seen }) {
     </li>
   );
 }
-function StrukturOrg({ personnel, onPatch }) {
+function StrukturOrg({ personnel, onPatch, canEdit }) {
   const roots = personnel.filter((p) => !p.atasanId || !personnel.find((x) => x.id === p.atasanId));
   const liniRoots = roots.filter((r) => (r.relasi || "lini") !== "staf");
   const stafRoots = roots.filter((r) => (r.relasi || "lini") === "staf");
@@ -1324,7 +1423,7 @@ function StrukturOrg({ personnel, onPatch }) {
         {stafRoots.length > 0 && <div style={{ textAlign: "center", marginTop: 10, fontSize: 11.5, color: "var(--muted)" }}>Belum punya atasan (staf): {stafRoots.map((s) => s.alias || s.nama).join(", ")}</div>}
       </div>
 
-      <div className="panel org-edit">
+      {canEdit && <div className="panel org-edit">
         <div className="panel-head"><h2><Network size={16} /> Atur Hubungan</h2><span className="sub">pilih atasan &amp; jenis relasi tiap personel</span></div>
         <div className="t-scroll">
           <table>
@@ -1350,7 +1449,7 @@ function StrukturOrg({ personnel, onPatch }) {
             </tbody>
           </table>
         </div>
-      </div>
+      </div>}
     </>
   );
 }
