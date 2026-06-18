@@ -732,6 +732,7 @@ export default function App() {
   const pById = useMemo(() => Object.fromEntries(personnel.map((p) => [p.id, p])), [personnel]);
   const sasaran = tenders.filter((t) => t.grup === "sasaran");
   const cadangan = tenders.filter((t) => t.grup === "cadangan");
+  const potensial = tenders.filter((t) => t.grup === "potensial");
   const isCounted = (t) => ["proses", "menang"].includes(t.hasil || "proses");
   const totalNilai = tenders.filter(isCounted).reduce((s, t) => s + (+t.nilai || 0), 0);
   const rkapTarget = rkap.reduce((s, r) => s + (+r.nilai || 0), 0);
@@ -847,7 +848,7 @@ export default function App() {
 
       <div className="wrap">
         {tab === "ringkasan" && (
-          <Ringkasan workload={workload} roleWorkload={roleWorkload} tenders={tenders} sasaran={sasaran} cadangan={cadangan}
+          <Ringkasan workload={workload} roleWorkload={roleWorkload} tenders={tenders} sasaran={sasaran} cadangan={cadangan} potensial={potensial}
             personnel={personnel} rkap={rkap} rkapTarget={rkapTarget} rkapReal={rkapReal} rkapPct={rkapPct}
             onEdit={canEdit ? (t) => setTenderModal({ tender: t }) : () => {}} onInfo={(t) => setInfoModal(t.id)} />
         )}
@@ -864,11 +865,24 @@ export default function App() {
                 <input placeholder="Cari tender, client, partner…" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
               {canEdit && <button className="btn btn-primary" style={{ marginLeft: "auto" }} onClick={() => setTenderModal({ tender: null })}><Plus size={16} /> Tambah Tender</button>}
             </div>
-            <TenderGroup title="Sasaran" icon={<Target size={13} />} rows={sasaran.filter(match)} pById={pById} tone="#16a34a" canEdit={canEdit}
-              onEdit={(t) => setTenderModal({ tender: t })} onDel={delTender} onInfo={(t) => setInfoModal(t.id)} onHasil={setHasil} />
-            <div style={{ height: 18 }} />
-            <TenderGroup title="Cadangan" icon={<Layers size={13} />} rows={cadangan.filter(match)} pById={pById} tone="#ca8a04" canEdit={canEdit}
-              onEdit={(t) => setTenderModal({ tender: t })} onDel={delTender} onInfo={(t) => setInfoModal(t.id)} onHasil={setHasil} />
+            {(() => {
+              const isKalah = (t) => (t.hasil || "proses") === "kalah";
+              const inGrup = (g) => tenders.filter((t) => t.grup === g && !isKalah(t)).filter(match);
+              const kalahRows = tenders.filter(isKalah).filter(match);
+              const groups = [
+                { title: "Sasaran", icon: <Target size={13} />, rows: inGrup("sasaran"), tone: "#16a34a" },
+                { title: "Cadangan", icon: <Layers size={13} />, rows: inGrup("cadangan"), tone: "#ca8a04" },
+                { title: "Potensial", icon: <Briefcase size={13} />, rows: inGrup("potensial"), tone: "#7c3aed" },
+                { title: "Kalah", icon: <Trash2 size={13} />, rows: kalahRows, tone: "#c2143b" },
+              ];
+              return groups.map((g, i) => (
+                <div key={g.title}>
+                  {i > 0 && <div style={{ height: 18 }} />}
+                  <TenderGroup title={g.title} icon={g.icon} rows={g.rows} pById={pById} tone={g.tone} canEdit={canEdit}
+                    onEdit={(t) => setTenderModal({ tender: t })} onDel={delTender} onInfo={(t) => setInfoModal(t.id)} onHasil={setHasil} />
+                </div>
+              ));
+            })()}
           </div>
         )}
 
@@ -1039,7 +1053,7 @@ function CalendarWidget({ tenders, onEdit }) {
 }
 
 /* ============================ Ringkasan ============================ */
-function Ringkasan({ workload, roleWorkload, tenders, sasaran, cadangan, personnel, rkap = [], rkapTarget, rkapReal, rkapPct, onEdit, onInfo }) {
+function Ringkasan({ workload, roleWorkload, tenders, sasaran, cadangan, potensial = [], personnel, rkap = [], rkapTarget, rkapReal, rkapPct, onEdit, onInfo }) {
   const count = tenders.length;
   const isCounted = (t) => ["proses", "menang"].includes(t.hasil || "proses");
   const counted = tenders.filter(isCounted);
@@ -1048,6 +1062,7 @@ function Ringkasan({ workload, roleWorkload, tenders, sasaran, cadangan, personn
   const nilaiProses = tenders.filter((t) => (t.hasil || "proses") === "proses").reduce((s, t) => s + (+t.nilai || 0), 0);
   const nilaiSasaran = sasaran.filter(isCounted).reduce((s, t) => s + (+t.nilai || 0), 0);
   const nilaiCadangan = cadangan.filter(isCounted).reduce((s, t) => s + (+t.nilai || 0), 0);
+  const nilaiPotensial = potensial.filter(isCounted).reduce((s, t) => s + (+t.nilai || 0), 0);
   const hasilCounts = Object.keys(HASIL).map((k) => ({ k, n: tenders.filter((t) => (t.hasil || "proses") === k).length })).filter((x) => x.n > 0);
   const urgent = tenders.filter((t) => { const rd = remainingDays(t.tgl); return rd !== null && rd >= 0 && rd <= 7; }).length;
   const overdue = tenders.filter((t) => { const rd = remainingDays(t.tgl); return rd !== null && rd < 0; }).length;
@@ -1081,7 +1096,7 @@ function Ringkasan({ workload, roleWorkload, tenders, sasaran, cadangan, personn
         <div className="kpis">
           <div className="kpi-b"><div className="val num">{idrShort(nilaiMenang)}</div><div className="lb"><span className="dot" style={{ background: "#16a34a" }} />Nilai Menang</div></div>
           <div className="kpi-b"><div className="val num">{idrShort(nilaiProses)}</div><div className="lb"><span className="dot" style={{ background: C_BLUE }} />Nilai Proses</div></div>
-          <div className="kpi-b"><div className="val num">{count} <span className="dl mut">{sasaran.length}S · {cadangan.length}C</span></div><div className="lb"><span className="dot" style={{ background: C_AMBER }} />Jumlah Tender</div></div>
+          <div className="kpi-b"><div className="val num">{count} <span className="dl mut">{sasaran.length}S · {cadangan.length}C · {potensial.length}P</span></div><div className="lb"><span className="dot" style={{ background: C_AMBER }} />Jumlah Tender</div></div>
           <div className="kpi-b"><div className="val num">{urgent}</div><div className="lb"><span className="dot" style={{ background: C_RED }} />Pemasukan ≤7 Hari</div></div>
         </div>
 
@@ -1095,6 +1110,11 @@ function Ringkasan({ workload, roleWorkload, tenders, sasaran, cadangan, personn
             <div className="tn-l">Cadangan</div>
             <div className="tn-v num">{idrShort(nilaiCadangan)}</div>
             <div className="tn-s num">{cadangan.length} tender · nilai aktif</div>
+          </div>
+          <div className="tn-cell" style={{ borderLeftColor: "#7c3aed" }}>
+            <div className="tn-l">Potensial</div>
+            <div className="tn-v num">{idrShort(nilaiPotensial)}</div>
+            <div className="tn-s num">{potensial.length} tender · nilai aktif</div>
           </div>
         </div>
         <div className="tn-status">
@@ -1186,7 +1206,7 @@ function Ringkasan({ workload, roleWorkload, tenders, sasaran, cadangan, personn
       <GCard title="Tender Terbesar" tone="#b45309">
         <div className="rk">{top.length === 0 ? <div className="chart-flat">Belum ada data</div> :
           top.map((t, i) => (
-            <div key={t.id}><div className="rk-top"><span className="rk-i num">{i + 1}</span><span className="rk-n">{t.nama}</span><span className="rk-v num">{idrShort(t.nilai)}</span><span className="rk-d" style={{ color: t.grup === "sasaran" ? C_GREEN : "#8b97ad" }}>{t.grup === "sasaran" ? "SAS" : "CAD"}</span></div><div className="rk-bar"><i style={{ width: Math.max(4, (+t.nilai || 0) / maxTop * 100) + "%", background: C_GREEN }} /></div></div>
+            <div key={t.id}><div className="rk-top"><span className="rk-i num">{i + 1}</span><span className="rk-n">{t.nama}</span><span className="rk-v num">{idrShort(t.nilai)}</span><span className="rk-d" style={{ color: t.grup === "sasaran" ? C_GREEN : t.grup === "potensial" ? "#7c3aed" : "#8b97ad" }}>{t.grup === "sasaran" ? "SAS" : t.grup === "potensial" ? "POT" : "CAD"}</span></div><div className="rk-bar"><i style={{ width: Math.max(4, (+t.nilai || 0) / maxTop * 100) + "%", background: C_GREEN }} /></div></div>
           ))}</div>
       </GCard>
 
@@ -1389,7 +1409,7 @@ function TenderModal({ init, personnel, onSave, onClose }) {
         <div className="modal-head"><h3>{init ? "Ubah Tender" : "Tambah Tender"}</h3><button className="icon-btn" style={{ marginLeft: "auto" }} onClick={onClose}><X size={18} /></button></div>
         <div className="modal-body">
           <div className="row2">
-            <div className="field"><label>Grup</label><div className="seg">{["sasaran", "cadangan"].map((g) => <button key={g} className={f.grup === g ? "on" : ""} onClick={() => set("grup", g)}>{g === "sasaran" ? "🎯 Sasaran" : "📋 Cadangan"}</button>)}</div></div>
+            <div className="field"><label>Grup</label><div className="seg">{["sasaran", "cadangan", "potensial"].map((g) => <button key={g} className={f.grup === g ? "on" : ""} onClick={() => set("grup", g)}>{g === "sasaran" ? "🎯 Sasaran" : g === "cadangan" ? "📋 Cadangan" : "💡 Potensial"}</button>)}</div></div>
             <div className="field"><label>Prioritas</label><div className="seg">{[["high", "Tinggi"], ["normal", "Normal"], ["low", "Rendah"]].map(([v, l]) => <button key={v} className={f.prioritas === v ? "on" : ""} onClick={() => set("prioritas", v)}>{l}</button>)}</div></div>
           </div>
           <div className="field"><label>Nama Tender</label><input className="input" value={f.nama} onChange={(e) => set("nama", e.target.value)} placeholder="cth. Pembangunan Gedung…" /></div>
@@ -1399,7 +1419,7 @@ function TenderModal({ init, personnel, onSave, onClose }) {
           </div>
           <div className="row2">
             <div className="field"><label>Nilai Tender (Rp)</label><input className="input num" type="number" value={f.nilai} onChange={(e) => set("nilai", e.target.value)} placeholder="0" />{f.nilai > 0 && <div className="hint num">{idr(f.nilai)}</div>}</div>
-            <div className="field"><label>Status Hasil</label><div className="seg">{Object.entries(HASIL).map(([k, v]) => <button key={k} className={f.hasil === k ? "on" : ""} onClick={() => set("hasil", k)}>{v.label}</button>)}</div><div className="hint">Hanya "Menang" yang masuk realisasi RKAP.</div></div>
+            <div className="field"><label>Status Hasil</label><div className="seg">{Object.entries(HASIL).map(([k, v]) => <button key={k} className={f.hasil === k ? "on" : ""} onClick={() => set("hasil", k)}>{v.label}</button>)}</div><div className="hint">"Menang" masuk realisasi RKAP; "Kalah" otomatis pindah ke grup Kalah.</div></div>
           </div>
           <div className="field"><label>Status Keikutsertaan</label><div className="seg">{STATUS.map((s) => <button key={s} className={f.status === s ? "on" : ""} onClick={() => set("status", s)}>{s}</button>)}</div>
             {(f.status === "KSO" || f.status === "JO") && <input className="input" style={{ marginTop: 8 }} value={f.partner} onChange={(e) => set("partner", e.target.value)} placeholder={`Nama partner ${f.status}, cth. PT Wijaya Karya`} />}</div>
