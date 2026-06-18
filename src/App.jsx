@@ -633,6 +633,7 @@ export default function App() {
   const [auth, setAuth] = useState(null);
   const [authReady, setAuthReady] = useState(!hasSupabase);
   const lastJsonRef = useRef("");
+  const clientId = useRef(Math.random().toString(36).slice(2) + Date.now().toString(36));
 
   // Mode lokal (tanpa Supabase): sesi disimpan di localStorage.
   useEffect(() => {
@@ -691,34 +692,39 @@ export default function App() {
     (async () => {
       const s = await dataLoad();
       if (cancelled) return;
-      if (s && s.tenders) { setTenders(s.tenders); setPersonnel(s.personnel || []); setRkap(s.rkap || []); }
-      else { const sd = seed(); setTenders(sd.tenders); setPersonnel(sd.personnel); setRkap(sd.rkap); }
-      lastJsonRef.current = JSON.stringify(s && s.tenders ? s : { tenders, personnel, rkap });
+      const sd = (s && s.tenders) ? s : seed();
+      const t2 = sd.tenders || [], p2 = sd.personnel || [], r2 = sd.rkap || [];
+      setTenders(t2); setPersonnel(p2); setRkap(r2);
+      lastJsonRef.current = JSON.stringify({ tenders: t2, personnel: p2, rkap: r2 });
       setLoaded(true);
     })();
     return () => { cancelled = true; };
   }, [hasSupabase ? (auth ? auth.email : null) : "local"]);
 
-  // Simpan (debounce). Pengunjung tidak menulis.
+  // Simpan (debounce). Pengunjung tidak menulis. Setiap tulisan ditandai clientId agar gema-nya bisa dikenali.
   useEffect(() => {
     if (!loaded || !canEdit) return;
     const json = JSON.stringify({ tenders, personnel, rkap });
     if (json === lastJsonRef.current) return;
-    const h = setTimeout(() => { lastJsonRef.current = json; dataSave({ tenders, personnel, rkap }); }, 500);
+    const h = setTimeout(() => {
+      lastJsonRef.current = json;
+      dataSave({ tenders, personnel, rkap, _w: clientId.current, _t: Date.now() });
+    }, 500);
     return () => clearTimeout(h);
   }, [tenders, personnel, rkap, loaded, canEdit]);
 
-  // Sinkronisasi real-time antar pengguna (mode cloud).
+  // Sinkronisasi real-time antar pengguna (mode cloud). Abaikan gema tulisan sendiri.
   useEffect(() => {
     if (!hasSupabase || !auth) return;
     const ch = supabase.channel("dashboard-main")
       .on("postgres_changes", { event: "*", schema: "public", table: "dashboard", filter: "id=eq.main" }, (payload) => {
         const d = payload.new && payload.new.data;
-        if (!d) return;
-        const json = JSON.stringify(d);
-        if (json === lastJsonRef.current) return; // perubahan dari diri sendiri, abaikan
+        if (!d || d._w === clientId.current) return; // tulisan sendiri → abaikan
+        const t2 = d.tenders || [], p2 = d.personnel || [], r2 = d.rkap || [];
+        const json = JSON.stringify({ tenders: t2, personnel: p2, rkap: r2 });
+        if (json === lastJsonRef.current) return; // sudah sinkron
         lastJsonRef.current = json;
-        setTenders(d.tenders || []); setPersonnel(d.personnel || []); setRkap(d.rkap || []);
+        setTenders(t2); setPersonnel(p2); setRkap(r2);
       }).subscribe();
     return () => { try { supabase.removeChannel(ch); } catch {} };
   }, [auth]);
